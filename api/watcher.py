@@ -1,7 +1,6 @@
-import time
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-from app.rag import build_index
+from api.rag import build_index
 
 class FolderChangeHandler(FileSystemEventHandler):
     def on_any_event(self, event):

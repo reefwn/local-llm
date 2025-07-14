@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
-from app import rag
-from app.env import FILES_PATH
-from app.watcher import start_watcher
+from api import rag
+from api.env import FILES_PATH
+from api.watcher import start_watcher
 
 app = FastAPI()
 watcher = None
@@ -24,4 +24,4 @@ async def ask(request: Request):
     question = data.get("question", "")
     answer = rag.query_index(question)
 
-    return {"answer": answer}
+    return answer

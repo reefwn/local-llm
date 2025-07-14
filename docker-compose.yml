@@ -20,19 +20,30 @@ services:
   api:
     build:
       context: .
+      dockerfile: Dockerfile.api
     container_name: local-llm-api
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
     env_file:
       - .env
     ports:
       - "8000:8000"
     volumes:
-      - ./app:/app/app
+      - ./api:/app/api
       - ./files:/app/files
     depends_on:
       - ollama
       - chroma
     restart: unless-stopped
+
+  ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
+    container_name: local-llm-ui
+    ports:
+      - "8501:8501"
+    depends_on:
+      - api
 
 volumes:
   ollama-data:

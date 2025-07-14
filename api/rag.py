@@ -1,4 +1,4 @@
-from app.env import CHROMA_COLLECTION, EMBEDDING_MODEL, FILES_PATH, CHROMA_HOST, CHROMA_PORT, MODEL_NAME, OLLAMA_API
+from api.env import CHROMA_COLLECTION, EMBEDDING_MODEL, FILES_PATH, CHROMA_HOST, CHROMA_PORT, MODEL_NAME, OLLAMA_API
 from llama_index.core import VectorStoreIndex, StorageContext, SimpleDirectoryReader
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
@@ -36,12 +36,14 @@ def query_index(question: str):
         request_timeout=300
     )
 
+    print('asking...')
     query_engine = index.as_query_engine(
         llm=llm,
         response_mode="compact",
         return_source=True
     )
 
+    print('responding...')
     response = query_engine.query(question)
 
     sources = [
