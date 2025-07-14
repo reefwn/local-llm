@@ -1,0 +1,39 @@
+services:
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    restart: unless-stopped
+
+  chroma:
+    image: ghcr.io/chroma-core/chroma:1.0.15
+    container_name: chromadb
+    ports:
+      - "8001:8000"
+    volumes:
+      - chroma-data:/chroma/.chroma
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+    container_name: local-llm-api
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app/app
+      - ./files:/app/files
+    depends_on:
+      - ollama
+      - chroma
+    restart: unless-stopped
+
+volumes:
+  ollama-data:
+  chroma-data:
