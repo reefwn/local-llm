@@ -9,3 +9,4 @@ unstructured==0.18.5
 watchdog==6.0.0
 python-dotenv==1.1.1
 sentence-transformers==5.0.0
+requests==2.32.4
