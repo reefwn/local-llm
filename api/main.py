@@ -41,6 +41,8 @@ def warm_up_ollama():
 async def ask(request: Request):
     data = await request.json()
     question = data.get("question", "")
-    answer = rag.query_index(question)
 
-    return answer
+    return StreamingResponse(
+        rag.query_index(question),
+        media_type="text/event-stream"
+    )
