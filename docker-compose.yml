@@ -40,8 +40,11 @@ services:
       context: .
       dockerfile: Dockerfile.ui
     container_name: local-llm-ui
+    command: streamlit run main.py --server.port=8501 --server.address=0.0.0.0 --server.runOnSave true
     ports:
       - "8501:8501"
+    volumes:
+      - ./ui:/app
     depends_on:
       - api
 
