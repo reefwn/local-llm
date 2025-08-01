@@ -7,10 +7,13 @@ from llama_index.llms.ollama import Ollama
 import chromadb
 import os
 import json
+import torch
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
 client = chromadb.HttpClient(host=CHROMA_HOST, port=CHROMA_PORT)
 collection = client.get_or_create_collection(CHROMA_COLLECTION)
-embed_model = HuggingFaceEmbedding(model_name=EMBEDDING_MODEL)
+embed_model = HuggingFaceEmbedding(model_name=EMBEDDING_MODEL, device=device)
 vector_store = ChromaVectorStore(chroma_collection=collection)
 splitter = SentenceSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP)
 index = None
