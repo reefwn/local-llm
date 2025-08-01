@@ -100,3 +100,7 @@ Built with:
 - [ChromaDB](https://www.trychroma.com)
 - [Streamlit](https://streamlit.io)
 - [FastAPI](https://fastapi.tiangolo.com)
+
+Files:
+- [Medicine_Details.csv](https://www.kaggle.com/datasets/singhnavjot2062001/11000-medicine-details)
+- [who-model-formulary-2008.pdf](https://iris.who.int/handle/10665/44053)

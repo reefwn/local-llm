@@ -88,11 +88,26 @@ def query_index(question: str):
     if not index:
         build_index()
 
+    system_prompt = """
+        You are a certified pharmacist assistant.
+
+        Only suggest medications that are explicitly found in the reference file provided. Do not invent any medication names or dosages.
+
+        If a symptom does not match a known medication in the documents, say: "I couldn’t find a recommended medicine for this condition. Please consult a pharmacist."
+
+        For each recommendation, provide:
+        - The medicine name
+        - Its use case
+        - Dosage (if known)
+        - Side effects and warnings
+    """
+
     llm = Ollama(
         model=MODEL_NAME,
         base_url=OLLAMA_API,
         request_timeout=300,
         stream=True,
+        system_prompt=system_prompt
     )
 
     query_engine = index.as_query_engine(
