@@ -87,6 +87,37 @@ Any [Ollama-supported](https://ollama.com/library) model like:
 
 Make sure to `ollama pull <model>` before using it.
 
+## 🧪 Eval with Promptfoo
+
+This project includes a [promptfoo](https://www.promptfoo.dev/) evaluation suite in the `eval/` folder to test the RAG API responses.
+
+### Setup
+
+```bash
+cd eval
+python3 -m venv .venv
+source .venv/bin/activate
+pip install requests
+```
+
+### Run
+
+Make sure the API is running on `localhost:8000`, then:
+
+```bash
+PROMPTFOO_PYTHON=.venv/bin/python promptfoo eval
+```
+
+### View results
+
+```bash
+promptfoo view
+```
+
+![Promptfoo Eval Results](readme/promptfoo.png)
+
+---
+
 ## ❓ Example Query
 
 > "Summarize all documents in simple terms."

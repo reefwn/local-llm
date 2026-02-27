@@ -1,0 +1,61 @@
+description: "Pharmacist RAG Assistant Evaluation"
+
+providers:
+  - id: "file://provider.py"
+    label: "Local RAG API"
+
+prompts:
+  - "{{question}}"
+
+tests:
+  # --- Should answer with medication info ---
+  - vars:
+      question: "What medicine is recommended for a headache?"
+    assert:
+      - type: contains-any
+        value: ["paracetamol", "acetaminophen", "ibuprofen", "aspirin"]
+      - type: not-contains
+        value: "consult a pharmacist"
+
+  - vars:
+      question: "What is the recommended dosage for amoxicillin?"
+    assert:
+      - type: contains
+        value: "amoxicillin"
+      - type: contains-any
+        value: ["mg", "dosage", "dose"]
+
+  - vars:
+      question: "What are the side effects of ibuprofen?"
+    assert:
+      - type: contains
+        value: "ibuprofen"
+      - type: contains-any
+        value: ["side effect", "warning", "risk", "stomach", "bleeding"]
+
+  - vars:
+      question: "What medicine can I take for a fever?"
+    assert:
+      - type: contains-any
+        value: ["paracetamol", "acetaminophen", "ibuprofen"]
+
+  # --- Should fallback gracefully ---
+  - vars:
+      question: "What is the best programming language?"
+    assert:
+      - type: contains-any
+        value: ["consult a pharmacist", "couldn't find"]
+
+  - vars:
+      question: "Tell me a joke"
+    assert:
+      - type: contains-any
+        value: ["consult a pharmacist", "couldn't find"]
+
+  # --- Grounding: should not hallucinate ---
+  - vars:
+      question: "Can I take Xylotromazine for a cold?"
+    assert:
+      - type: not-contains
+        value: "Xylotromazine"
+        metric: no-hallucination

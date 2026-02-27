@@ -40,5 +40,5 @@ services:
       - api
 
 volumes:
-  ollama-data:
+  # ollama-data:
   faiss-data:
