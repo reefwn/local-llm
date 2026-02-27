@@ -1,12 +1,12 @@
 services:
-  ollama:
-    image: ollama/ollama
-    container_name: ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama-data:/root/.ollama
-    restart: unless-stopped
+  # ollama:
+  #   image: ollama/ollama
+  #   container_name: ollama
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollama-data:/root/.ollama
+  #   restart: unless-stopped
 
   api:
     build:
@@ -22,8 +22,8 @@ services:
       - ./api:/app/api
       - ./files:/app/files
       - faiss-data:/app/faiss_index
-    depends_on:
-      - ollama
+    # depends_on:
+    #   - ollama
     restart: unless-stopped
 
   ui:

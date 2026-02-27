@@ -3,9 +3,9 @@
 This project is a fully Dockerized **Retrieval-Augmented Generation (RAG)** system that lets you ask questions over documents in a folder — completely offline.
 
 It features:
-- 🤖 **Ollama** for local LLM inference (e.g. Mistral, Phi-3)
+- 🤖 **Ollama** for local LLM inference (e.g. Mistral, Phi-3, Qwen)
 - 🔍 **LlamaIndex** for document indexing and retrieval
-- 🗂️ **ChromaDB** for fast vector storage
+- 🗂️ **FAISS** for fast in-memory vector search
 - ⚡ **FastAPI** backend with streaming support (SSE)
 - 🌐 **Streamlit** frontend UI with live token streaming
 - 🔄 **Live reload & folder watching** for auto reindex
@@ -34,7 +34,7 @@ cd local-llm
 ### 2. Pull required Ollama model
 
 ```bash
-ollama pull mistral
+ollama pull qwen2.5:7b-instruct-q2_K
 ```
 
 ### 3. Start all services
@@ -51,12 +51,14 @@ docker-compose up -d
 Create a .env file
 
 ```dotenv
-MODEL_NAME=mistral
-EMBEDDING_MODEL=intfloat/e5-small-v2
 FILES_PATH=/app/files
-OLLAMA_API=http://ollama:11434
-CHROMA_HOST=chroma
-CHROMA_PORT=8000
+MODEL_NAME=qwen2.5:7b-instruct-q2_K
+OLLAMA_API=http://host.docker.internal:11434
+EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
+CHUNK_SIZE=1024
+CHUNK_OVERLAP=128
+FAISS_PERSIST_DIR=/app/faiss_index
+FAISS_DIM=384
 ```
 
 ## 🗂️ Folder Structure
@@ -65,7 +67,7 @@ CHROMA_PORT=8000
 .
 ├── api/               # FastAPI backend + LlamaIndex logic
 ├── ui/                # Streamlit frontend
-├── files/             # Drop your documents here (PDF, TXT, MD)
+├── files/             # Drop your documents here (PDF, TXT, MD, CSV)
 ├── Dockerfile.api     # API Dockerfile
 ├── Dockerfile.ui      # UI Dockerfile
 ├── docker-compose.yml
@@ -77,12 +79,13 @@ CHROMA_PORT=8000
 ## 🧪 Supported Models
 
 Any [Ollama-supported](https://ollama.com/library) model like:
+  - qwen2.5:7b-instruct-q2_K, qwen2.5:3b
   - mistral, mistral:instruct, mistral:Q4_0
-  - phi3:mini:Q4_0
+  - phi3:mini
   - gemma:2b, tinyllama:chat
   - llama2:7b, etc.
 
-Make sure to ollama pull <model> before using it.
+Make sure to `ollama pull <model>` before using it.
 
 ## ❓ Example Query
 
@@ -97,7 +100,7 @@ Or:
 Built with:
 - [Ollama](https://ollama.com)
 - [LlamaIndex](https://www.llamaindex.ai)
-- [ChromaDB](https://www.trychroma.com)
+- [FAISS](https://github.com/facebookresearch/faiss)
 - [Streamlit](https://streamlit.io)
 - [FastAPI](https://fastapi.tiangolo.com)
 
