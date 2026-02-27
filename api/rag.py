@@ -1,12 +1,10 @@
-from api.env import CHROMA_COLLECTION, EMBEDDING_MODEL, FILES_PATH, CHROMA_HOST, CHROMA_PORT, MODEL_NAME, OLLAMA_API, CHUNK_SIZE, CHUNK_OVERLAP
+from api.env import CHROMA_COLLECTION, EMBEDDING_MODEL, FILES_PATH, CHROMA_HOST, CHROMA_PORT, CHUNK_SIZE, CHUNK_OVERLAP
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core import VectorStoreIndex, StorageContext, SimpleDirectoryReader
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-from llama_index.llms.ollama import Ollama
 import chromadb
 import os
-import json
 import torch
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -83,50 +81,9 @@ def build_index():
     index = indexing([])
 
 
-def query_index(question: str):
+def get_retriever(similarity_top_k: int = 2):
+    """Return a retriever from the current index for use by LangGraph."""
     global index
     if not index:
         build_index()
-
-    system_prompt = """
-        You are a certified pharmacist assistant.
-
-        Only suggest medications that are explicitly found in the reference file provided. Do not invent any medication names or dosages.
-
-        If a symptom does not match a known medication in the documents, say: "I couldn’t find a recommended medicine for this condition. Please consult a pharmacist."
-
-        For each recommendation, provide:
-        - The medicine name
-        - Its use case
-        - Dosage (if known)
-        - Side effects and warnings
-    """
-
-    llm = Ollama(
-        model=MODEL_NAME,
-        base_url=OLLAMA_API,
-        request_timeout=300,
-        stream=True,
-        system_prompt=system_prompt
-    )
-
-    query_engine = index.as_query_engine(
-        llm=llm,
-        similarity_top_k=2,
-        return_source=True,
-        streaming=True,
-    )
-    response = query_engine.query(question)
-
-    for token in response.response_gen:
-        yield f"data: {token}\n\n"
-
-    # ✅ Send final source metadata as JSON
-    source_payload = [
-        {
-            "text": node.text,
-            "metadata": node.metadata
-        }
-        for node in response.source_nodes
-    ]
-    yield f"event: sources\ndata: {json.dumps(source_payload)}\n\n"
+    return index.as_retriever(similarity_top_k=similarity_top_k)

@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request
 from api import rag
+from api.graph import run_query
 from api.env import FILES_PATH, MODEL_NAME, OLLAMA_API
 from api.watcher import start_watcher
 import requests
@@ -24,15 +25,21 @@ def shutdown_event():
 
 def warm_up_ollama():
     try:
+        print(f"Pulling model '{MODEL_NAME}' (skipped if already present)...")
+        requests.post(
+            f"{OLLAMA_API}/api/pull",
+            json={"name": MODEL_NAME, "stream": False},
+            timeout=600
+        )
         print("Warming up LLM...")
         requests.post(
             f"{OLLAMA_API}/api/generate",
             json={
-                "model": MODEL_NAME, 
-                "prompt": "Hello", 
+                "model": MODEL_NAME,
+                "prompt": "Hello",
                 "stream": False
             },
-            timeout=60
+            timeout=120
         )
     except Exception as e:
         print(f"Warmup failed: {e}")
@@ -43,6 +50,6 @@ async def ask(request: Request):
     question = data.get("question", "")
 
     return StreamingResponse(
-        rag.query_index(question),
+        run_query(question),
         media_type="text/event-stream"
     )
