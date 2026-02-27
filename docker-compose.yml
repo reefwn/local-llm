@@ -8,15 +8,6 @@ services:
       - ollama-data:/root/.ollama
     restart: unless-stopped
 
-  chroma:
-    image: ghcr.io/chroma-core/chroma:1.0.15
-    container_name: chromadb
-    ports:
-      - "8001:8000"
-    volumes:
-      - chroma-data:/chroma/.chroma
-    restart: unless-stopped
-
   api:
     build:
       context: .
@@ -30,9 +21,9 @@ services:
     volumes:
       - ./api:/app/api
       - ./files:/app/files
+      - faiss-data:/app/faiss_index
     depends_on:
       - ollama
-      - chroma
     restart: unless-stopped
 
   ui:
@@ -50,4 +41,4 @@ services:
 
 volumes:
   ollama-data:
-  chroma-data:
+  faiss-data:

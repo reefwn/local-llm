@@ -2,8 +2,9 @@ fastapi==0.116.1
 uvicorn==0.35.0
 llama-index==0.12.48
 llama-index-llms-ollama==0.6.2
-llama-index-vector-stores-faiss==0.6.1
+llama-index-vector-stores-faiss==0.4.0
 llama-index-embeddings-huggingface
+faiss-cpu==1.13.2
 unstructured==0.18.5
 watchdog==6.0.0
 python-dotenv==1.1.1

@@ -1,18 +1,18 @@
-from api.env import CHROMA_COLLECTION, EMBEDDING_MODEL, FILES_PATH, CHROMA_HOST, CHROMA_PORT, CHUNK_SIZE, CHUNK_OVERLAP
+from api.env import EMBEDDING_MODEL, FILES_PATH, CHUNK_SIZE, CHUNK_OVERLAP
 from llama_index.core.node_parser import SentenceSplitter
-from llama_index.core import VectorStoreIndex, StorageContext, SimpleDirectoryReader
-from llama_index.vector_stores.chroma import ChromaVectorStore
+from llama_index.core import VectorStoreIndex, StorageContext, SimpleDirectoryReader, load_index_from_storage
+from llama_index.vector_stores.faiss import FaissVectorStore
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-import chromadb
+import faiss
 import os
 import torch
 
+FAISS_PERSIST_DIR = os.getenv("FAISS_PERSIST_DIR", "./faiss_index")
+FAISS_DIM = int(os.getenv("FAISS_DIM", "384"))
+
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-client = chromadb.HttpClient(host=CHROMA_HOST, port=CHROMA_PORT)
-collection = client.get_or_create_collection(CHROMA_COLLECTION)
 embed_model = HuggingFaceEmbedding(model_name=EMBEDDING_MODEL, device=device)
-vector_store = ChromaVectorStore(chroma_collection=collection)
 splitter = SentenceSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP)
 index = None
 
@@ -25,60 +25,59 @@ def get_file_metadata(file_path: str):
     }
 
 
+def _load_persisted_index():
+    """Load existing FAISS index from disk if available."""
+    if os.path.exists(os.path.join(FAISS_PERSIST_DIR, "default__vector_store.json")):
+        vector_store = FaissVectorStore.from_persist_dir(FAISS_PERSIST_DIR)
+        storage_context = StorageContext.from_defaults(vector_store=vector_store, persist_dir=FAISS_PERSIST_DIR)
+        return load_index_from_storage(storage_context, embed_model=embed_model)
+    return None
+
+
 def indexing(docs):
+    faiss_index = faiss.IndexFlatL2(FAISS_DIM)
+    vector_store = FaissVectorStore(faiss_index=faiss_index)
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
-    return VectorStoreIndex.from_documents(
+    idx = VectorStoreIndex.from_documents(
         docs,
         storage_context=storage_context,
         embed_model=embed_model,
         show_progress=True,
         transformations=[splitter]
     )
+    idx.storage_context.persist(persist_dir=FAISS_PERSIST_DIR)
+    return idx
+
 
 def build_index():
     global index
 
-    # Get or create Chroma collection
-    existing_metadatas = collection.get(include=["metadatas"])["metadatas"]
+    # Try loading persisted index
+    index = _load_persisted_index()
 
-    # Build a set of (file_path, last_modified) for deduplication
-    existing_signatures = set()
-    for meta in existing_metadatas:
-        key = (meta.get("file_path"), meta.get("last_modified"))
-        existing_signatures.add(key)
-
-    print(f"[Indexing] Found {len(existing_signatures)} files in Chroma.")
-
-    # Load new/changed files
+    # Load all files
     docs = []
     for file in os.listdir(FILES_PATH):
         file_path = os.path.join(FILES_PATH, file)
         if not os.path.isfile(file_path):
             continue
 
-        meta = get_file_metadata(file_path)
-        signature = (meta["file_path"], meta["last_modified"])
-        if signature in existing_signatures:
-            print(f"[Indexing] Skipping already indexed: {file}")
-            continue
-
         print(f"[Indexing] Adding: {file}")
         loader = SimpleDirectoryReader(input_files=[file_path])
         file_docs = loader.load_data()
 
-        # Add metadata to each doc
+        meta = get_file_metadata(file_path)
         for doc in file_docs:
             doc.metadata.update(meta)
             docs.append(doc)
 
     if docs:
         index = indexing(docs)
-        print(f"[Indexing] Added {len(docs)} new docs to Chroma.")
-    else:
-        print("[Indexing] No new documents to index.")
-
-    # Build index for retrieval
-    index = indexing([])
+        print(f"[Indexing] Indexed {len(docs)} docs with FAISS.")
+    elif not index:
+        # Empty index as fallback
+        index = indexing([])
+        print("[Indexing] No documents found. Created empty index.")
 
 
 def get_retriever(similarity_top_k: int = 2):
