@@ -22,7 +22,14 @@ For each recommendation, provide:
 - Dosage (if known)
 - Side effects and warnings"""
 
-GRADER_PROMPT = """You are a relevance grader. Given a user question and retrieved documents, determine if the documents contain information relevant to answering the question.
+GRADER_PROMPT = """You are a relevance grader for a pharmacist assistant system.
+
+Given a user question and retrieved documents, determine if the documents contain ANY medication or medical information that could help answer the question.
+
+Rules:
+- If the question is about medicine/health AND documents contain medicine info: reply "relevant"
+- If the question is NOT about medicine/health (e.g., programming, jokes): reply "not_relevant"
+- If documents mention related symptoms, medications, or treatments: reply "relevant"
 
 Reply with ONLY "relevant" or "not_relevant"."""
 
@@ -55,7 +62,7 @@ def retrieve(state: GraphState) -> GraphState:
 
 def grade_documents(state: GraphState) -> GraphState:
     """Grade retrieved documents for relevance."""
-    llm = ChatOllama(model=MODEL_NAME, base_url=OLLAMA_API, temperature=0)
+    llm = ChatOllama(model=MODEL_NAME, base_url=OLLAMA_API, temperature=0.1)
     prompt = ChatPromptTemplate.from_messages([
         ("system", GRADER_PROMPT),
         ("human", "Question: {question}\n\nDocuments:\n{documents}"),
@@ -66,7 +73,7 @@ def grade_documents(state: GraphState) -> GraphState:
     result = chain.invoke({"question": state["question"], "documents": docs_text})
 
     grade = result.content.strip().lower()
-    if "not_relevant" in grade:
+    if "not_relevant" in grade or "not relevant" in grade:
         return {"documents": []}
     return state
 
@@ -108,11 +115,19 @@ def build_graph():
     workflow = StateGraph(GraphState)
 
     workflow.add_node("retrieve", retrieve)
+    workflow.add_node("grade_documents", grade_documents)
     workflow.add_node("generate", generate)
+    workflow.add_node("fallback", fallback)
 
     workflow.set_entry_point("retrieve")
-    workflow.add_edge("retrieve", "generate")
+    workflow.add_edge("retrieve", "grade_documents")
+    workflow.add_conditional_edges(
+        "grade_documents",
+        decide_after_grading,
+        {"generate": "generate", "fallback": "fallback"}
+    )
     workflow.add_edge("generate", END)
+    workflow.add_edge("fallback", END)
 
     return workflow.compile()
 

@@ -9,10 +9,15 @@ import torch
 
 FAISS_PERSIST_DIR = os.getenv("FAISS_PERSIST_DIR", "./faiss_index")
 FAISS_DIM = int(os.getenv("FAISS_DIM", "384"))
+EMBED_BATCH_SIZE = int(os.getenv("EMBED_BATCH_SIZE", "32"))
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-embed_model = HuggingFaceEmbedding(model_name=EMBEDDING_MODEL, device=device)
+embed_model = HuggingFaceEmbedding(
+    model_name=EMBEDDING_MODEL, 
+    device=device,
+    embed_batch_size=EMBED_BATCH_SIZE
+)
 splitter = SentenceSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP)
 index = None
 
@@ -75,14 +80,14 @@ def build_index():
         index = indexing(docs)
         print(f"[Indexing] Indexed {len(docs)} docs with FAISS.")
     elif not index:
-        # Empty index as fallback
-        index = indexing([])
-        print("[Indexing] No documents found. Created empty index.")
+        print("[Indexing] No documents found. Index remains uninitialized.")
 
 
-def get_retriever(similarity_top_k: int = 2):
+def get_retriever(similarity_top_k: int = 3):
     """Return a retriever from the current index for use by LangGraph."""
     global index
     if not index:
         build_index()
+        if not index:
+            raise RuntimeError("No documents available for retrieval. Please add documents to the FILES_PATH directory.")
     return index.as_retriever(similarity_top_k=similarity_top_k)

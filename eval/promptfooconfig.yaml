@@ -39,23 +39,69 @@ tests:
       - type: contains-any
         value: ["paracetamol", "acetaminophen", "ibuprofen"]
 
+  - vars:
+      question: "Can I use aspirin for pain relief?"
+    assert:
+      - type: contains
+        value: "aspirin"
+      - type: contains-any
+        value: ["pain", "relief", "analgesic"]
+
+  - vars:
+      question: "What antibiotics are used for infections?"
+    assert:
+      - type: contains-any
+        value: ["amoxicillin", "penicillin", "antibiotic"]
+
+  - vars:
+      question: "Is paracetamol safe during pregnancy?"
+    assert:
+      - type: contains
+        value: "paracetamol"
+      - type: contains-any
+        value: ["pregnancy", "pregnant", "safe", "caution"]
+
+  - vars:
+      question: "What's the difference between ibuprofen and paracetamol?"
+    assert:
+      - type: contains
+        value: "ibuprofen"
+      - type: contains
+        value: "paracetamol"
+
   # --- Should fallback gracefully ---
   - vars:
       question: "What is the best programming language?"
     assert:
       - type: contains-any
-        value: ["consult a pharmacist", "couldn't find"]
+        value: ["consult a pharmacist", "couldn't find", "not find"]
 
   - vars:
       question: "Tell me a joke"
     assert:
       - type: contains-any
-        value: ["consult a pharmacist", "couldn't find"]
+        value: ["consult a pharmacist", "couldn't find", "not find"]
+
+  - vars:
+      question: "How do I bake a cake?"
+    assert:
+      - type: contains-any
+        value: ["consult a pharmacist", "couldn't find", "not find"]
 
   # --- Grounding: should not hallucinate ---
   - vars:
       question: "Can I take Xylotromazine for a cold?"
     assert:
+      - type: contains-any
+        value: ["couldn't find", "not find", "no information"]
+        metric: no-hallucination
       - type: not-contains
         value: "Xylotromazine"
-        metric: no-hallucination
+
+  - vars:
+      question: "What is Supermedicin used for?"
+    assert:
+      - type: contains-any
+        value: ["couldn't find", "not find", "no information"]
+      - type: not-contains
+        value: "Supermedicin"

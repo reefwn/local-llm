@@ -105,7 +105,7 @@ pip install requests
 Make sure the API is running on `localhost:8000`, then:
 
 ```bash
-PROMPTFOO_PYTHON=.venv/bin/python promptfoo eval
+PROMPTFOO_PYTHON=.venv/bin/python promptfoo eval --no-cache
 ```
 
 ### View results
