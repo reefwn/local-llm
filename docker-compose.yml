@@ -39,6 +39,16 @@ services:
     depends_on:
       - api
 
+  openwebui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: openwebui
+    ports:
+      - "8502:8080"
+    volumes:
+      - open-webui:/app/backend/data
+
 volumes:
   # ollama-data:
   faiss-data:
+  open-webui:
+
